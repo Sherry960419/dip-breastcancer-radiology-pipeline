@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env / Conda env
+env/
+venv/
+.venv/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Large data / models
+models/
+outputs/
+data/
+experiment/
+reports/
+*.dcm
+*.les
+
+# System files
+.DS_Store
