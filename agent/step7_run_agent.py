@@ -13,17 +13,22 @@ Pipeline:
 
 from pathlib import Path
 import glob
+import sys
+
+# Add project root to Python path
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
 
 from langchain_core.runnables import RunnableLambda, RunnableSequence
 
 from config import DICOM_DIR
-from step0_prepare_case import run_step as step0
-from step1_dicom_to_png import run_step as step1
-from step2_medsam_segmentation import run_step as step2
-from step3_evaluation import run_step as step3
-from step4_literature_search import run_step as step4
-from step5_build_prompt import run_step as step5
-from step6_llm_summary import run_step as step6
+from tools.step0_prepare_case import run_step as step0
+from tools.step1_dicom_to_png import run_step as step1
+from tools.step2_medsam_segmentation import run_step as step2
+from tools.step3_evaluation import run_step as step3
+from tools.step4_literature_search import run_step as step4
+from tools.step5_build_prompt import run_step as step5
+from tools.step6_llm_summary import run_step as step6
 
 
 def _wrap_step(name, func):

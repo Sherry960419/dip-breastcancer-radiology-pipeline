@@ -12,11 +12,46 @@ venv/
 # Jupyter checkpoints
 .ipynb_checkpoints/
 
-# Large data / models
+# Local experiments / drafts (optional: 如果不想上传 experiment，就加上这行)
+experiment/
+
+# Models and large outputs
 models/
 outputs/
+
+# If you don't want to upload raw imaging files, keep these:
 *.dcm
+*.dicom
 *.les
 
 # System files
 .DS_Store
+
+# Local secrets file (if you ever create one)
+.env
+EOFcat > .gitignore << 'EOF'
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env / Conda env
+env/
+venv/
+.venv/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Local experiments / drafts
+experiment/
+
+# Models and large outputs
+models/
+
+# System files
+.DS_Store
+
+# Local secrets file (if you ever create one)
+.env
