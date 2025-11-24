@@ -1,158 +1,243 @@
-# DIP Breast Cancer Radiology AI Pipeline
+# Breast Cancer Radiology AI Agent Workflow (DIP Project)
 
-Automated pipeline for breast cancer DICOM preprocessing, MedSAM segmentation, Dice/IoU evaluation, clinical data extraction, PubMed retrieval, and Gemini-based radiology report generation.
+This repository contains an end-to-end AI Agent workflow for **breast cancer radiology analysis**, integrating medical image preprocessing, MedSAM segmentation, Dice/IoU evaluation, TCGA clinical data extraction, PubMed literature retrieval, and Gemini Vision report generation.
 
----
-
-## 1. Project Overview
-
-This project builds an end-to-end automated radiology workflow:
-
-- DICOM → PNG preprocessing  
-- MedSAM segmentation (with preprocessing-enhanced prompts)  
-- Dice/IoU evaluation with visualization  
-- Clinical information extraction from TCGA PanCanAtlas TSV  
-- PubMed top-20 literature search  
-- Gemini 2.5 Flash Vision radiology report generation  
-
-The workflow is modular (Step0–Step7) and designed for easy debugging and extension.
+The design follows a modular multi-step architecture inspired by modern AI agent systems (LangChain RunnableSequence), ensuring reproducibility, interpretability, and component-level debug capability.
 
 ---
 
-## 2. Folder Structure
+## 1. Introduction
+
+Accurate breast cancer assessment requires radiology–clinical–genomic integration.  
+Traditional imaging workflows often lack automation, consistency, and structured reporting.
+
+This project proposes a **DICOM-to-Report AI Agent**, consisting of:
+
+- Automated DICOM preprocessing  
+- Preprocessing-enhanced MedSAM segmentation  
+- Dice/IoU quantitative evaluation  
+- Clinical info extraction from TCGA PanCanAtlas  
+- PubMed top-20 literature retrieval based on tumor morphology  
+- Gemini 2.5 Flash Vision–powered radiology report  
+
+The full workflow is suitable for:
+
+- Research  
+- Radiogenomics exploratory analysis  
+- AI-assisted structured radiology reporting  
+- Medical imaging coursework projects  
+
+---
+
+## 2. Project Objectives
+
+The goals of this project include:
+
+### 🔹 2.1 Image Processing & Segmentation
+- Convert DICOM to PNG with intensity normalization  
+- Preprocess PNG before segmentation  
+- Apply MedSAM with:
+  - intensity-based seed point selection  
+  - adaptive bounding box  
+  - largest-component postprocessing  
+- Predict tumor shape (Round/Oval vs Irregular)
+
+### 🔹 2.2 Evaluation & Visualization
+- Decode TCGA `.les` polygon files  
+- Compute Dice & IoU  
+- Generate overlay comparison visualization  
+
+### 🔹 2.3 Clinical Data Integration
+Extract from TCGA TSV:
+- Diagnosis Age  
+- Subtype  
+- TNM Stage Code  
+- Validate patient–row matching  
+
+### 🔹 2.4 Literature Retrieval
+- Retrieve **Top 20 most relevant PubMed papers**  
+- Extract titles, journals, years  
+- Provide contextual understanding of tumor morphology  
+
+### 🔹 2.5 Gemini Radiology Report Generation
+Use Gemini Vision to produce:
+- Findings based on PNG + segmentation  
+- Integrated literature insights  
+- Personalized clinical next steps  
+- Uncertainty & limitations  
+
+---
+
+## 3. Dataset
+
+This workflow relies on:
+
+### **3.1 TCGA-BRCA Clinical Data**
+```
+brca_tcga_pan_can_atlas_2018_clinical_data.tsv
+```
+Containing:
+- Patient ID  
+- Diagnosis Age  
+- Subtype  
+- Tumor/Lymph Node/Metastasis stage codes  
+
+### **3.2 DICOM Images**
+Place under:
+```
+data/dicoms/
+```
+
+### **3.3 Ground Truth Lesions (.les)**
+Polygon masks for Dice/IoU evaluation:
+```
+data/lesions/
+```
+
+### **3.4 MedSAM Model Checkpoint**
+```
+models/medsam_vit_b.pth
+```
+(Provided by the MedSAM authors—include citation below)
+
+---
+
+## 4. Methods
+
+### **4.1 Image Preprocessing**
+- DICOM → normalized PNG  
+- Optional brightness / contrast adjustment  
+- Grayscale conversion for intensity-based seed extraction  
+
+### **4.2 MedSAM Segmentation (Enhanced)**
+Segmentation uses:
+- **Intensity-based seed points** (top 0.5% bright pixels)  
+- **Auto bounding box**  
+- **Largest connected component extraction**  
+- **Tumor shape inference**  
+
+### **4.3 Quantitative Evaluation**
+- Load `.les` polygon  
+- Fill into binary mask  
+- Compute:
+  - Dice  
+  - IoU  
+- Save comparison visualization  
+
+### **4.4 PubMed Retrieval**
+Query:
+```
+"breast cancer" + predicted tumor shape
+```
+Retrieve:
+- Top 20 relevant papers  
+- Titles / journals / years  
+
+### **4.5 Gemini Radiology Report**
+Final radiology-style report includes:
+- Patient basic clinical info  
+- Findings on PNG & mask  
+- Literature synthesis  
+- Clinically meaningful next steps  
+- Limitations  
+
+---
+
+## 5. Repository Structure
 
 ```
 DIP Project/
-│── config.py
-│── step0_prepare_case.py
-│── step1_dicom_to_png.py
-│── step2_medsam_segmentation.py
-│── step3_evaluation.py
-│── step4_literature_search.py
-│── step5_build_prompt.py
-│── step6_gemini_summary.py
-│── step7_run_agent.py
+│
+├── agent/
+│   └── step7_run_agent.py               # Main orchestrator workflow
+│
+├── tools/
+│   ├── step0_prepare_case.py            # Extract patient ID + clinical info
+│   ├── step1_dicom_to_png.py            # DICOM → PNG
+│   ├── step2_medsam_segmentation.py     # Enhanced MedSAM segmentation
+│   ├── step3_evaluation.py              # Dice/IoU + visualization
+│   ├── step4_literature_search.py       # PubMed retrieval
+│   ├── step5_build_prompt.py            # Build Gemini prompt
+│   └── step6_gemini_summary.py          # Call Gemini Vision API
+│
+├── config.py                            # Global paths + API keys
 │
 ├── data/
-│     ├── dicoms/
-│     ├── lesions/
-│     └── brca_tcga_pan_can_atlas_2018_clinical_data.tsv
+│   ├── dicoms/
+│   ├── lesions/
+│   └── brca_tcga_pan_can_atlas_2018_clinical_data.tsv
 │
-└── outputs/
+└── outputs/                             # PNGs, masks, overlays, reports
 ```
 
 ---
 
-## 3. Installation
+## 6. Installation
 
-### 3.1 Create and activate Conda environment
+### 6.1 Conda Environment
 
 ```bash
 conda create -n dip_env python=3.10
 conda activate dip_env
 ```
 
-### 3.2 Install dependencies
+### 6.2 Install Dependencies
 
 ```bash
-pip install pydicom opencv-python numpy matplotlib langchain-core biopython google-generativeai
-```
-
-### 3.3 MedSAM checkpoint
-
-Download or place the MedSAM checkpoint here:
-
-```
-models/medsam_vit_b.pth
+pip install pydicom opencv-python numpy matplotlib biopython langchain-core google-generativeai
 ```
 
 ---
 
-## 4. How to Run the Pipeline
+## 7. How to Run
 
-### 4.1 Run entire workflow
-
+### **Run full workflow**
 ```bash
-python step7_run_agent.py
+python agent/step7_run_agent.py
 ```
 
-### 4.2 Test individual steps  
-Useful for debugging segmentation or evaluation.
-
+### **Run individual tools for debugging**
 ```bash
-python step2_medsam_segmentation.py
-python step3_evaluation.py
+python tools/step2_medsam_segmentation.py
+python tools/step3_evaluation.py
 ```
 
 ---
 
-## 5. Clinical TSV Requirements
+## 8. Output Files
 
-The TSV file must contain at least the columns:
+Saved to `outputs/`:
 
-- `Patient ID`  
-- `Diagnosis Age`  
-- `Subtype`  
-- `American Joint Committee on Cancer Tumor Stage Code`  
-- `Neoplasm Disease Lymph Node Stage American Joint Committee on Cancer Code`  
-- `American Joint Committee on Cancer Metastasis Stage Code`
-
-These fields are used to extract:
-
-- Age  
-- Subtype  
-- Stage Code (combined T + N + M)
+- `{patient_id}.png` — preprocessed DICOM  
+- `{patient_id}_mask.png` — MedSAM mask  
+- `{patient_id}_overlay.png` — mask overlay  
+- `{patient_id}_pred_vs_gt.png` — Dice/IoU comparison  
+- `{patient_id}_summary.txt` — final radiology report  
 
 ---
 
-## 6. PubMed Search
+## 9. Citations
 
-The workflow retrieves the **top 20 most relevant papers** based on:
+Please cite the datasets and models used:
 
-```
-breast cancer + predicted tumor shape
-```
+### **TCGA-BRCA Dataset**
+> The Cancer Genome Atlas Program (TCGA), National Cancer Institute.
 
-### 6.1 Set PubMed email
+### **MedSAM**
+> Ma, J., et al. "Segment Anything Model for Medical Images." (2023).
 
-Update in `config.py`:
-
-```python
-PUBMED_EMAIL = "your_email@example.com"
-```
+### **Gemini API**
+> Google DeepMind, Gemini 2.5 Flash Vision.
 
 ---
 
-## 7. Output Files
+## 10. Work-in-Progress Notice
 
-The workflow generates:
+This repository continues to evolve and may include experimental modules such as:
 
-- Preprocessed PNG  
-- Segmentation mask  
-- Overlay image  
-- Dice/IoU comparison visualization  
-- Final Gemini-generated radiology report
-
-Reports are saved under:
-
-```
-outputs/{patient_id}_summary.txt
-```
+- multi-slice 3D inference  
+- radiogenomics integration  
+- AI agent–based error correction  
+- improved PubMed ranking models  
 
 ---
-
-## 8. Features
-
-- Modular multi-step design for easy debugging  
-- Preprocessing-enhanced MedSAM segmentation  
-- Automatic tumor shape classification  
-- PubMed integration (BioPython Entrez)  
-- Large language model (Gemini Vision) for final clinical report  
-- Supports multi-patient batch processing  
-
----
-
-## 9. Contact
-
-For questions, please open an Issue or contact the project maintainer.
-
