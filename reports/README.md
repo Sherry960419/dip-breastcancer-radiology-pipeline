@@ -15,4 +15,3 @@ All reports are generated automatically by running:
 ```bash
 python agent/step7_run_agent.py
 
-These files are provided as demonstration outputs for reproducibility and for grading purposes.
