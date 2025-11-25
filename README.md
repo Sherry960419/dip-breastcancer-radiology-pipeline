@@ -1,120 +1,152 @@
-# Breast Cancer Radiology AI Agent Workflow (DIP Project)
+# **Radiology AI Agent for Breast Cancer MRI: MedSAM Segmentation + TCGA Clinical Integration + LLM Reporting**
 
 This repository contains an end-to-end AI Agent workflow for **breast cancer radiology analysis**, integrating medical image preprocessing, MedSAM segmentation, Dice/IoU evaluation, TCGA clinical data extraction, PubMed literature retrieval, and Gemini Vision report generation.
 
+- automatic DICOM preprocessing  
+- enhanced MedSAM segmentation  
+- Dice/IoU evaluation using TCGA Radiogenomics lesion masks  
+- clinical metadata extraction from TCGA PanCancer Atlas (via cBioPortal)  
+- PubMed top-20 literature retrieval  
+- Gemini Vision–powered structured radiology report 
+
 The design follows a modular multi-step architecture inspired by modern AI agent systems (LangChain RunnableSequence), ensuring reproducibility, interpretability, and component-level debug capability.
+
+This project was developed for the **Digital Image Processing (DIP)** course and is extendable to future research in radiogenomics and clinical AI.
 
 ---
 
-## 1. Introduction
+# **1. Introduction**
 
-Accurate breast cancer assessment requires radiology–clinical–genomic integration.  
-Traditional imaging workflows often lack automation, consistency, and structured reporting.
+Accurate breast cancer imaging analysis requires consistent segmentation, structured reporting, and meaningful integration of clinical and literature knowledge.
 
-This project proposes a **DICOM-to-Report AI Agent**, consisting of:
-
-- Automated DICOM preprocessing  
-- Preprocessing-enhanced MedSAM segmentation  
-- Dice/IoU quantitative evaluation  
-- Clinical info extraction from TCGA PanCanAtlas  
-- PubMed top-20 literature retrieval based on tumor morphology  
-- Gemini 2.5 Flash Vision–powered radiology report  
-
-The full workflow is suitable for:
+This workflow proposes a **DICOM → PNG → Segmentation → Evaluation → Clinical Data → PubMed → LLM Report** pipeline designed for:
 
 - Research  
 - Radiogenomics exploratory analysis  
 - AI-assisted structured radiology reporting  
 - Medical imaging coursework projects  
 
+The pipeline supports single-case or batch inference and includes a **test mode** to accelerate debugging.
+
 ---
 
-## 2. Project Objectives
+# **2. Project Objectives**
 
-The goals of this project include:
-
-### 🔹 2.1 Image Processing & Segmentation
-- Convert DICOM to PNG with intensity normalization  
-- Preprocess PNG before segmentation  
-- Apply MedSAM with:
-  - intensity-based seed point selection  
+###  2.1 Medical Image Processing & Segmentation
+- Convert DICOM → normalized PNG  
+- Preprocessing (denoise, contrast enhancement optional)  
+- MedSAM segmentation with:
+  - intensity-based foreground seed extraction  
   - adaptive bounding box  
-  - largest-component postprocessing  
-- Predict tumor shape (Round/Oval vs Irregular)
+  - largest connected component post-processing  
+- Tumor shape prediction (Round/Oval vs Irregular)
 
-### 🔹 2.2 Evaluation & Visualization
-- Decode TCGA `.les` polygon files  
-- Compute Dice & IoU  
-- Generate overlay comparison visualization  
+###  2.2 Quantitative Evaluation
+- Decode TCGA `.les` polygon annotations  
+- Compute Dice and IoU  
+- Save GT vs prediction visual overlays
 
-### 🔹 2.3 Clinical Data Integration
+###  2.3 Clinical Data Integration
 Extract from TCGA TSV:
 - Diagnosis Age  
 - Subtype  
 - TNM Stage Code  
 - Validate patient–row matching  
 
-### 🔹 2.4 Literature Retrieval
-- Retrieve **Top 20 most relevant PubMed papers**  
-- Extract titles, journals, years  
-- Provide contextual understanding of tumor morphology  
+Automatic matching via DICOM Patient ID.
 
-### 🔹 2.5 Gemini Radiology Report Generation
-Use Gemini Vision to produce:
-- Findings based on PNG + segmentation  
-- Integrated literature insights  
-- Personalized clinical next steps  
-- Uncertainty & limitations  
+###  2.4 PubMed Literature Retrieval
+- Use: `"breast cancer" + predicted tumor shape`  
+- Retrieve top-20 **most relevant** (not latest) papers  
+- Extract: title, journal, year for LLM summarization
+
+###  2.5 Radiology Report Generation (LLM)
+Gemini Vision 2.5 Flash produces:
+- tumor findings  
+- segmentation interpretation  
+- literature-integrated clinical context  
+- suggested next steps  
+- uncertainty & limitations  
 
 ---
 
-## 3. Dataset
+# **3. Data Sources**
 
-This workflow relies on:
+This project does **NOT** use the full TCGA-BRCA imaging dataset.  
+Instead, **only the first 10–20 patients from the TCGA Breast Radiogenomics annotation file** are selected, and their DICOMs are downloaded using:
 
-### **3.1 TCGA-BRCA Clinical Data**
-```
-brca_tcga_pan_can_atlas_2018_clinical_data.tsv
-```
-Containing:
-- Patient ID  
+- **SERIES_UID**
+- **IMAGE_UID**
+
+to locate the corresponding MRI slice in the TCIA DICOM repository.
+
+---
+
+## **3.1 TCGA Imaging Data (DICOM)**  
+Breast MRI data accessed using `SERIES_UID` + `IMAGE_UID`:
+
+**The Cancer Imaging Archive (TCIA)**  
+**TCGA-BRCA Collection**  
+🔗 https://www.cancerimagingarchive.net/collection/tcga-brca/
+
+---
+
+## **3.2 Lesion Ground Truth (.les)**  
+Polygon-based radiologist annotations used for Dice/IoU:
+
+**TCGA Breast Radiogenomics – Analysis Results @ TCIA**  
+🔗 https://www.cancerimagingarchive.net/analysis-result/tcga-breast-radiogenomics/
+
+---
+
+## **3.3 Clinical Data (TSV)**  
+Clinical metadata loaded from:
+
+**cBioPortal – Breast Invasive Carcinoma (TCGA, PanCancer Atlas)**  
+🔗 https://www.cbioportal.org/study/summary?id=brca_tcga_pan_can_atlas_2018
+
+Fields used:
 - Diagnosis Age  
 - Subtype  
-- Tumor/Lymph Node/Metastasis stage codes  
-
-### **3.2 DICOM Images**
-Place under:
-```
-data/dicoms/
-```
-
-### **3.3 Ground Truth Lesions (.les)**
-Polygon masks for Dice/IoU evaluation:
-```
-data/lesions/
-```
-
-### **3.4 MedSAM Model Checkpoint**
-```
-models/medsam_vit_b.pth
-```
-(Provided by the MedSAM authors—include citation below)
+- Tumor Stage Code  
+- Lymph Node Stage Code  
+- Metastasis Stage Code  
 
 ---
 
-## 4. Methods
+## **Required Citations**
 
-### **4.1 Image Preprocessing**
+If you use this repository, please cite:
+
+### **TCGA Program**
+The Cancer Genome Atlas (TCGA) Research Network  
+🔗 https://www.cancer.gov/tcga  
+
+### **TCIA**
+Clark et al., *The Cancer Imaging Archive (TCIA): Maintaining and Operating a Public Information Repository*, J Digit Imaging (2013).  
+🔗 https://doi.org/10.1007/s10278-013-9622-7  
+
+### **cBioPortal**
+Cerami et al., 2012; Gao et al., 2013  
+🔗 https://www.cbioportal.org/cite  
+
+---
+
+# **4. Methods**
+
+### **4.1 DICOM Preprocessing**
 - DICOM → normalized PNG  
 - Optional brightness / contrast adjustment  
 - Grayscale conversion for intensity-based seed extraction  
 
-### **4.2 MedSAM Segmentation (Enhanced)**
+
+### **4.2 Enhanced MedSAM Segmentation**
 Segmentation uses:
 - **Intensity-based seed points** (top 0.5% bright pixels)  
 - **Auto bounding box**  
 - **Largest connected component extraction**  
-- **Tumor shape inference**  
+- **Tumor shape classification**  
+
 
 ### **4.3 Quantitative Evaluation**
 - Load `.les` polygon  
@@ -191,11 +223,15 @@ pip install pydicom opencv-python numpy matplotlib biopython langchain-core goog
 
 ## 7. How to Run
 
-### **Run full workflow**
+### **Run the whole agent pipeline**
 ```bash
 python agent/step7_run_agent.py
 ```
-
+### **Run in test mode(only first case)**
+in step7_run_agent_py:
+```bash
+TEST_MODE = TRUE
+```
 ### **Run individual tools for debugging**
 ```bash
 python tools/step2_medsam_segmentation.py
@@ -218,10 +254,7 @@ Saved to `outputs/`:
 
 ## 9. Citations
 
-Please cite the datasets and models used:
-
-### **TCGA-BRCA Dataset**
-> The Cancer Genome Atlas Program (TCGA), National Cancer Institute.
+Please cite the models used:
 
 ### **MedSAM**
 > Ma, J., et al. "Segment Anything Model for Medical Images." (2023).
@@ -235,9 +268,10 @@ Please cite the datasets and models used:
 
 This repository continues to evolve and may include experimental modules such as:
 
+- refined segmentation heuristics
 - multi-slice 3D inference  
 - radiogenomics integration  
 - AI agent–based error correction  
-- improved PubMed ranking models  
+- improved PubMed ranking  
 
 ---
